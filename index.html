@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#9E1F36" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>第二课堂情报站</title>
+<style>
+  :root{
+    --sjtu-red:#9E1F36;
+    --sjtu-red-dark:#7d1829;
+    --sjtu-red-light:#c8324b;
+    --ink:#1f2328;
+    --ink-2:#5b6472;
+    --ink-3:#8b95a5;
+    --line:#eceef1;
+    --bg:#f4f5f7;
+    --card:#ffffff;
+    --ok:#1a7f4b;
+    --warn:#c2680a;
+    --full:#8b95a5;
+    --none:#2b6cb0;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(16,24,40,.04),0 4px 14px rgba(16,24,40,.06);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",system-ui,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.5;
+    padding-bottom:env(safe-area-inset-bottom);
+    -webkit-font-smoothing:antialiased;
+  }
+  /* ---------- 顶部 ---------- */
+  header{
+    position:sticky;top:0;z-index:20;
+    background:linear-gradient(135deg,var(--sjtu-red) 0%,var(--sjtu-red-dark) 100%);
+    color:#fff;padding:calc(env(safe-area-inset-top) + 16px) 18px 14px;
+    box-shadow:0 2px 12px rgba(158,31,54,.28);
+  }
+  .hi{display:flex;align-items:center;gap:10px}
+  .hi h1{font-size:19px;margin:0;font-weight:700;letter-spacing:.5px}
+  .hi .dot{width:8px;height:8px;border-radius:50%;background:#7ee2a8;box-shadow:0 0 0 3px rgba(126,226,168,.25);flex:none}
+  .sub{margin-top:5px;font-size:12px;opacity:.86;display:flex;flex-wrap:wrap;gap:4px 10px}
+  .sub b{font-weight:600}
+  /* ---------- 登录过期横幅 ---------- */
+  #expired{display:none;background:#fff4e5;border:1px solid #ffd8a8;color:#8a4b00;margin:10px 12px 0;padding:11px 13px;border-radius:12px;font-size:13px}
+  #expired.show{display:block}
+  #expired b{display:block;margin-bottom:3px;font-size:13.5px}
+  #expired code{background:#fff;border:1px solid #ffd8a8;border-radius:5px;padding:1px 5px;font-size:12px}
+  /* ---------- 统计 ---------- */
+  .stats{display:flex;gap:8px;padding:12px 12px 2px}
+  .stat{flex:1;background:var(--card);border-radius:12px;padding:10px 8px;text-align:center;box-shadow:var(--shadow)}
+  .stat .n{font-size:20px;font-weight:700;line-height:1.15;color:var(--sjtu-red)}
+  .stat .n.g{color:var(--ok)}.stat .n.w{color:var(--warn)}.stat .n.f{color:var(--full)}
+  .stat .t{font-size:11px;color:var(--ink-3);margin-top:2px}
+  /* ---------- 筛选 ---------- */
+  nav{display:flex;gap:8px;padding:12px;overflow-x:auto;scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  nav button{
+    flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink-2);
+    font-size:13px;padding:7px 15px;border-radius:999px;font-family:inherit;cursor:pointer;
+    transition:.15s;white-space:nowrap;
+  }
+  nav button.on{background:var(--sjtu-red);border-color:var(--sjtu-red);color:#fff;font-weight:600;box-shadow:0 2px 8px rgba(158,31,54,.25)}
+  nav button span{opacity:.7;font-size:12px}
+  /* ---------- 列表 ---------- */
+  main{padding:0 12px 26px;display:flex;flex-direction:column;gap:11px}
+  .card{
+    background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:13px 14px;display:flex;gap:12px;position:relative;overflow:hidden;
+    animation:in .28s ease both;
+  }
+  @keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .card.full{opacity:.72}
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--sjtu-red)}
+  .card.full::before,.card.closed::before{background:var(--full)}
+  .card.tight::before{background:var(--warn)}
+  .card.none::before{background:var(--none)}
+  .date{
+    flex:none;width:48px;text-align:center;border-right:1px solid var(--line);padding-right:10px;
+    display:flex;flex-direction:column;justify-content:flex-start;
+  }
+  .date .d{font-size:21px;font-weight:700;color:var(--sjtu-red);line-height:1.1}
+  .date .m{font-size:11px;color:var(--ink-3)}
+  .body{flex:1;min-width:0}
+  .title{font-size:15px;font-weight:650;margin:0 0 6px;line-height:1.35;word-break:break-word}
+  .tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px}
+  .tag{font-size:11px;padding:1.5px 7px;border-radius:5px;background:#f1f3f6;color:var(--ink-2);white-space:nowrap}
+  .tag.open{background:#e7f6ee;color:var(--ok)}
+  .tag.tight{background:#fdf1e3;color:var(--warn)}
+  .tag.full{background:#f0f1f4;color:var(--full)}
+  .tag.none{background:#e8f1fa;color:var(--none)}
+  .tag.closed{background:#eef0f3;color:#7c8798}
+  .tag.m{background:#f5f0fb;color:#6b3fa0}
+  .tag.labor{background:#e3f5ec;color:#0f7a45;font-weight:600}
+  /* ---------- 劳动学时条 ---------- */
+  .laborbar{
+    display:none;align-items:center;gap:9px;margin:10px 12px 0;padding:10px 13px;
+    background:linear-gradient(135deg,#e9f7f0,#dff2e8);border:1px solid #c9e7d8;
+    border-radius:12px;font-size:12.5px;color:#0f7a45;box-shadow:var(--shadow);
+  }
+  .laborbar.show{display:flex}
+  .laborbar .ic{font-size:19px;line-height:1;flex:none}
+  .laborbar .tx{flex:1;min-width:0}
+  .laborbar .tx b{font-size:15px;font-weight:700}
+  .laborbar .tx small{display:block;color:#4b8a6b;font-size:11px;margin-top:1px}
+  .meta{font-size:12.5px;color:var(--ink-2);display:flex;flex-direction:column;gap:3px}
+  .meta i{font-style:normal;color:var(--ink-3);display:inline-block;min-width:30px}
+  .desc{font-size:12.5px;color:var(--ink-3);margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);word-break:break-word}
+  .quota{margin-top:9px}
+  .quota .bar{height:5px;border-radius:3px;background:#eef0f3;overflow:hidden}
+  .quota .bar i{display:block;height:100%;border-radius:3px;background:var(--ok);transition:width .4s}
+  .quota .bar i.mid{background:var(--warn)}
+  .quota .bar i.hot{background:#d64545}
+  .quota .txt{font-size:11.5px;color:var(--ink-3);margin-top:4px;display:flex;justify-content:space-between;gap:8px}
+  .quota .txt b{color:var(--ink-2);font-weight:600}
+  .go{
+    display:inline-flex;align-items:center;gap:4px;margin-top:10px;font-size:12.5px;font-weight:600;
+    color:var(--sjtu-red);text-decoration:none;border:1px solid rgba(158,31,54,.28);
+    padding:5px 12px;border-radius:8px;background:rgba(158,31,54,.04);
+  }
+  .go:active{background:rgba(158,31,54,.12)}
+  .empty{text-align:center;color:var(--ink-3);font-size:13.5px;padding:46px 10px}
+  .empty .big{font-size:34px;margin-bottom:8px;opacity:.5}
+  footer{padding:6px 18px 30px;text-align:center;font-size:11.5px;color:var(--ink-3);line-height:1.8}
+  footer a{color:var(--ink-3)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hi"><span class="dot"></span><h1>第二课堂情报站</h1></div>
+  <div class="sub">
+    <span>更新于 <b id="updatedAt">—</b></span>
+    <span id="srcTip">数据源 activity.sjtu.edu.cn/dekt</span>
+  </div>
+</header>
+
+<div id="expired">
+  <b>⚠️ 登录态已过期，数据可能不是最新</b>
+  请在电脑上打开 Edge 重新登录第二课堂，然后运行 <code>抓取.cmd</code>。
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="n" id="s-all">0</div><div class="t">全部活动</div></div>
+  <div class="stat"><div class="n g" id="s-open">0</div><div class="t">可报名</div></div>
+  <div class="stat"><div class="n w" id="s-tight">0</div><div class="t">名额紧张</div></div>
+  <div class="stat"><div class="n f" id="s-full">0</div><div class="t">已满</div></div>
+</div>
+
+<div class="laborbar" id="laborbar">
+  <span class="ic">🧹</span>
+  <span class="tx"><b id="laborMain">—</b><small id="laborSub"></small></span>
+</div>
+
+<nav id="filters"></nav>
+<main id="list"></main>
+<footer>
+  <div>数据来自上海交通大学校园活动平台 · 需校内登录才可报名</div>
+  <div>本页仅作信息聚合，一切以官网为准</div>
+</footer>
+
+<script type="application/json" id="boardData">{"updatedAt":"2026-10-10 14:35","loginExpired":false,"source":"activity.sjtu.edu.cn/dekt","labor":{"count":16,"hours":46},"activities":[{"id":18763,"title":"新语杯辩论赛工作人员招募","org":"媒体与传播学院","date":"10月9日","time":"13:00-23:45","location":"媒体与传播学院教室","status":"open","method":1,"url":"https://activity.sjtu.edu.cn/detail/18763","desc":"","start":"2026-10-09 13:00:00","end":"2026-10-24 23:45:00","deadline":"10月11日 23:45","labor":{"counted":true,"hours":2}},{"id":18771,"title":"秋归拾趣,拼豆生花","org":"机械与动力工程学院","date":"10月11日","time":"14:30-16:30","location":"机械与动力工程学院F310","status":"open","method":6,"url":"https://activity.sjtu.edu.cn/detail/18771","desc":"跳转其他报名","start":"2026-10-11 14:30:00","end":"2026-10-11 16:30:00","labor":{"counted":true,"hours":2},"jumpUrl":"https://ssc.sjtu.edu.cn/f/c68fbc1e"},{"id":18762,"title":"【交圕学堂|第1周课堂】AI赋能：从资源查找借阅到前沿选题精准检索","org":"图书馆","date":"10月14日","time":"14:00-19:45","location":"图书馆主馆B120","status":"open","method":3,"url":"https://activity.sjtu.edu.cn/detail/18762","desc":"","start":"2026-10-14 14:00:00","end":"2026-10-14 19:45:00","deadline":"10月14日 18:00"},{"id":18829,"title":"奇绩创业公开课｜在校大学生直播互动课报名","org":"奇绩创坛主办，人工智能学院参与组织","date":"10月16日","time":"18:30-20:00","location":"线上直播","status":"open","method":1,"url":"https://activity.sjtu.edu.cn/detail/18829","desc":"主讲：奇绩创坛创始人及合伙人","start":"2026-10-16 18:30:00","end":"2026-11-20 20:00:00","quota":300,"applied":147,"deadline":"10月14日 20:00","labor":{"counted":true,"hours":3}},{"id":18821,"title":"AI时代的岗位与求职路经规划分享会","org":"SJTU双创协会·JobLink","date":"10月16日","time":"19:00-20:30","location":"东中院4号楼4-101","status":"open","method":3,"url":"https://activity.sjtu.edu.cn/detail/18821","desc":"主讲：大厂嘉宾：毛哥、无悔、南枝、COCO、林轩","start":"2026-10-16 19:00:00","end":"2026-10-16 20:30:00","deadline":"10月15日 20:00","labor":{"counted":true,"hours":2}},{"id":18757,"title":"地理迷踪社 | 三校图寻友谊赛","org":"地理迷踪社","date":"10月18日","time":"15:00-17:00","location":"东中院4-103","status":"open","method":6,"url":"https://activity.sjtu.edu.cn/detail/18757","desc":"跳转其他报名","start":"2026-10-18 15:00:00","end":"2026-10-18 17:00:00","labor":{"counted":true,"hours":1},"jumpUrl":"https://wj.sjtu.edu.cn/q/jBgedfeY"},{"id":18143,"title":"数字山海社秋日游园会志愿者招募","org":"上海交通大学学生创新中心","date":"9月4日","time":"13:45-07:15","location":"上海交通大学学生创新中心","status":"full","method":1,"url":"https://activity.sjtu.edu.cn/detail/18143","desc":"","start":"2026-09-04 13:45:00","end":"2026-10-31 07:15:00","quota":100,"applied":108,"deadline":"10月31日 07:15","labor":{"counted":true,"hours":4}},{"id":18804,"title":"诺奖解读：幽灵粒子捕手——从 IceCube 到海铃，一场跨越南极与南海的追捕","org":"物理与天文学院、李政道研究所","date":"10月11日","time":"19:00-20:30","location":"李政道图书馆底楼报告厅","status":"full","method":3,"url":"https://activity.sjtu.edu.cn/detail/18804","desc":"主讲：徐东莲","start":"2026-10-11 19:00:00","end":"2026-10-11 20:30:00","quota":240,"applied":241,"deadline":"10月11日 12:00","lecture":true},{"id":18708,"title":"《艾情白皮书》——防艾公益话剧（下午场）","org":"上海交通大学校医院","date":"10月12日","time":"14:00-16:30","location":"上海交通大学闵行校区菁菁堂","status":"full","method":3,"url":"https://activity.sjtu.edu.cn/detail/18708","desc":"","start":"2026-10-12 14:00:00","end":"2027-09-12 16:30:00","quota":350,"applied":350,"deadline":"10月12日 14:00","labor":{"counted":true,"hours":2}},{"id":18712,"title":"《艾情白皮书》——防艾公益话剧（晚场）","org":"上海交通大学校医院","date":"10月12日","time":"18:30-21:00","location":"上海交通大学闵行校区菁菁堂","status":"full","method":3,"url":"https://activity.sjtu.edu.cn/detail/18712","desc":"","start":"2026-10-12 18:30:00","end":"2026-10-12 21:00:00","quota":700,"applied":700,"deadline":"10月12日 18:30","labor":{"counted":true,"hours":2}},{"id":18717,"title":"【大师讲坛】自强不息，家国情怀","org":"研究生院","date":"10月14日","time":"14:00-16:00","location":"李政道图书馆报告厅","status":"full","method":3,"url":"https://activity.sjtu.edu.cn/detail/18717","desc":"主讲：苏国辉","start":"2026-10-14 14:00:00","end":"2026-10-14 16:00:00","quota":450,"applied":450,"deadline":"10月14日 09:00","lecture":true},{"id":18785,"title":"\"文治大讲堂\"第二十五期：活出心花怒放的人生——积极心理学的科学启迪","org":"上海交通大学文科建设处，上海交通大学学生工作指导委员会","date":"10月17日","time":"14:00-16:00","location":"闵行校区学生活动中心A100","status":"full","method":3,"url":"https://activity.sjtu.edu.cn/detail/18785","desc":"主讲：清华大学心理与认知科学系教授 彭凯平","start":"2026-10-17 14:00:00","end":"2026-10-17 16:00:00","quota":430,"applied":431,"deadline":"10月14日 10:00","labor":{"counted":true,"hours":2}},{"id":18113,"title":"徐汇老图-VR校史剧项目志愿者/助管招募（2026秋季学期）","org":"上海交大-南加州大学文化创意产业学院","date":"9月2日","time":"16:15-23:45","location":"上海交通大学（徐汇校区）校史博物馆（老图书馆）一楼左侧VR展厅","status":"closed","method":1,"url":"https://activity.sjtu.edu.cn/detail/18113","desc":"","start":"2026-09-02 16:15:00","end":"2026-12-31 23:45:00","quota":20,"applied":3,"deadline":"9月30日 23:45","labor":{"counted":true,"hours":2}},{"id":18155,"title":"第二届数字山海机器人大赛参赛选手招募","org":"上海交通大学学生创新中心","date":"9月10日","time":"08:00-08:15","location":"上海交通大学学生创新中心","status":"closed","method":3,"url":"https://activity.sjtu.edu.cn/detail/18155","desc":"","start":"2026-09-10 08:00:00","end":"2026-10-17 08:15:00","deadline":"9月17日 08:00","labor":{"counted":true,"hours":3}},{"id":18274,"title":"篮球-微生态科研项目志愿者招募","org":"农业与生物学院","date":"9月21日","time":"07:00-20:00","location":"交大和华师大闵行校区，具体地点录取后通知","status":"closed","method":3,"url":"https://activity.sjtu.edu.cn/detail/18274","desc":"","start":"2026-09-21 07:00:00","end":"2027-01-16 20:00:00","quota":55,"applied":55,"deadline":"9月20日 23:45","labor":{"counted":true,"hours":4}},{"id":18297,"title":"“口述生科”——交大生物学30年记忆寻访","org":"生命科学技术学院","date":"9月30日","time":"00:00-23:45","location":"上海市内、外省市校友所在地","status":"closed","method":1,"url":"https://activity.sjtu.edu.cn/detail/18297","desc":"","start":"2026-09-30 00:00:00","end":"2026-11-30 23:45:00","deadline":"10月8日 11:00","labor":{"counted":true,"hours":12}},{"id":18744,"title":"“行之有序”生科劳动教育 （26秋第四周）","org":"生命科学技术学院青志队","date":"10月8日","time":"08:00-23:30","location":"生命科学技术学院大楼","status":"closed","method":1,"url":"https://activity.sjtu.edu.cn/detail/18744","desc":"","start":"2026-10-08 08:00:00","end":"2026-10-11 23:30:00","deadline":"10月9日 08:00","labor":{"counted":true,"hours":1}},{"id":18724,"title":"2026秋季“社彩”第二课堂","org":"校团委社团工作部","date":"10月8日","time":"12:00-12:00","location":"录取后会进行通知","status":"closed","method":1,"url":"https://activity.sjtu.edu.cn/detail/18724","desc":"","start":"2026-10-08 12:00:00","end":"2027-01-10 12:00:00","deadline":"10月5日 20:00"},{"id":18705,"title":"第112期励行讲堂预告函 | 岁月长，莫慌张——杨千嬅的情绪觉察和生活减法","org":"共青团上海交通大学委员会","date":"10月10日","time":"13:30-15:00","location":"上海交通大学（闵行校区）学生中心A100报告厅","status":"closed","method":3,"url":"https://activity.sjtu.edu.cn/detail/18705","desc":"主讲：杨千嬅","start":"2026-10-10 13:30:00","end":"2026-10-10 15:00:00","quota":400,"applied":421,"deadline":"10月9日 12:15"},{"id":18745,"title":"10月11日剑川路地铁志愿者活动","org":"材料科学与工程学院","date":"10月11日","time":"13:30-15:00","location":"剑川路地铁站","status":"closed","method":3,"url":"https://activity.sjtu.edu.cn/detail/18745","desc":"","start":"2026-10-11 13:30:00","end":"2026-10-11 15:00:00","quota":3,"applied":5,"deadline":"10月10日 12:00","labor":{"counted":true,"hours":2}},{"id":18779,"title":"2026年农业与生物学院学生党建研究会“定向越野”活动","org":"农业与生物学院学生党建研究会","date":"10月11日","time":"14:00-16:00","location":"上海交通大学闵行校区东区","status":"closed","method":3,"url":"https://activity.sjtu.edu.cn/detail/18779","desc":"","start":"2026-10-11 14:00:00","end":"2026-10-11 16:00:00","quota":30,"applied":30,"deadline":"10月10日 12:00","labor":{"counted":true,"hours":2}}]}</script>
+
+<script>
+(function(){
+  var D = {updatedAt:'—',loginExpired:true,activities:[]};
+  try { D = JSON.parse(document.getElementById('boardData').textContent); } catch(e){}
+  var A = Array.isArray(D.activities) ? D.activities : [];
+
+  var STATUS = {
+    open:{t:'可报名',c:'open'},
+    tight:{t:'名额紧张',c:'tight'},
+    full:{t:'已满',c:'full'},
+    none:{t:'报名未开始',c:'none'},
+    closed:{t:'报名已截止',c:'closed'}
+  };
+  var METHOD = {1:'审核录取',2:'线下报名',3:'先到先得',4:'无需报名',5:'随机录取',6:'跳转其他报名'};
+  var FILTERS = [
+    {k:'all',   t:'全部'},
+    {k:'open',  t:'可报名'},
+    {k:'tight', t:'名额紧张'},
+    {k:'labor', t:'计劳动学时'},
+    {k:'none',  t:'未开始'},
+    {k:'full',  t:'已满'},
+    {k:'closed',t:'已截止'}
+  ];
+
+  document.getElementById('updatedAt').textContent = D.updatedAt || '—';
+  if (D.loginExpired) document.getElementById('expired').classList.add('show');
+
+  var cnt = {all:A.length, open:0, tight:0, full:0, none:0, other:0, labor:0};
+  A.forEach(function(a){
+    if (cnt[a.status] === undefined) cnt.other++; else cnt[a.status]++;
+    if (a.labor && a.labor.counted) cnt.labor++;
+  });
+  cnt.all = A.length;
+  document.getElementById('s-all').textContent   = cnt.all;
+  document.getElementById('s-open').textContent  = cnt.open;
+  document.getElementById('s-tight').textContent = cnt.tight;
+  document.getElementById('s-full').textContent  = cnt.full;
+
+  // 劳动学时汇总条
+  var lb = D.labor || {};
+  var lbCount = cnt.labor, lbHours = A.reduce(function(s,a){ return s + (a.labor && a.labor.counted ? (a.labor.hours||0) : 0); }, 0);
+  if (lbCount){
+    document.getElementById('laborMain').textContent = '计劳动学时 ' + lbCount + ' 场 · 合计 ' + lbHours + ' 学时';
+    document.getElementById('laborSub').textContent  = '按每场标注的学时累加；实际认定以第二课堂官网为准';
+    document.getElementById('laborbar').classList.add('show');
+  }
+
+  // 筛选按钮
+  var nav = document.getElementById('filters');
+  FILTERS.forEach(function(f){
+    var n = f.k === 'all' ? cnt.all : (cnt[f.k]||0);
+    var b = document.createElement('button');
+    b.dataset.k = f.k;
+    b.innerHTML = f.t + ' <span>' + n + '</span>';
+    if (f.k === 'all') b.classList.add('on');
+    b.onclick = function(){
+      [].forEach.call(nav.children, function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      render(f.k);
+    };
+    nav.appendChild(b);
+  });
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  function render(k){
+    var list = document.getElementById('list');
+    var items = k === 'all' ? A
+      : k === 'labor' ? A.filter(function(a){ return a.labor && a.labor.counted; })
+      : A.filter(function(a){ return a.status === k; });
+    if (!items.length){
+      list.innerHTML = '<div class="empty"><div class="big">🗓️</div>暂时没有符合条件的活动<br>（或数据尚未抓取）</div>';
+      return;
+    }
+    list.innerHTML = items.map(function(a, i){
+      var st = STATUS[a.status] || {t:a.status||'—', c:''};
+      var mm = String(a.date||'').match(/(\d+)\s*月/);
+      var dd = String(a.date||'').match(/(\d+)\s*日/);
+      var laborHtml = (a.labor && a.labor.counted)
+        ? '<span class="tag labor">劳动 '+(a.labor.hours||'?')+' 学时</span>' : '';
+      var quotaHtml = '';
+      if (a.quota){
+        var pct = Math.min(100, Math.round((a.applied||0) / a.quota * 100));
+        var cls = pct >= 100 ? 'hot' : (pct >= 70 ? 'mid' : '');
+        quotaHtml = '<div class="quota"><div class="bar"><i class="'+cls+'" style="width:'+pct+'%"></i></div>'+
+          '<div class="txt"><span>已报名 <b>'+(a.applied||0)+'</b> / '+a.quota+' 人</span><span>剩余 '+Math.max(0,a.quota-(a.applied||0))+'</span></div></div>';
+      }
+      return '<article class="card '+st.c+'" style="animation-delay:'+Math.min(i*25,300)+'ms">'+
+        '<div class="date"><div class="d">'+(dd?dd[1]:'—')+'</div><div class="m">'+(mm?mm[1]+'月':'')+'</div></div>'+
+        '<div class="body">'+
+          '<h2 class="title">'+esc(a.title)+'</h2>'+
+          '<div class="tags"><span class="tag '+st.c+'">'+esc(st.t)+'</span>'+
+            laborHtml+
+            (METHOD[a.method]?'<span class="tag m">'+esc(METHOD[a.method])+'</span>':'')+
+            (a.org?'<span class="tag">'+esc(a.org)+'</span>':'')+'</div>'+
+          '<div class="meta">'+
+            (a.time?'<div><i>时间</i>'+esc(a.date||'')+' '+esc(a.time)+'</div>':'')+
+            (a.location?'<div><i>地点</i>'+esc(a.location)+'</div>':'')+
+            (a.deadline?'<div><i>截止</i>'+esc(a.deadline)+'</div>':'')+
+          '</div>'+
+          quotaHtml+
+          (a.desc?'<div class="desc">'+esc(a.desc)+'</div>':'')+
+          '<a class="go" href="'+esc(a.jumpUrl||a.url||'https://activity.sjtu.edu.cn/dekt')+'" target="_blank" rel="noopener">'+
+            (a.jumpUrl?'去外部报名 →':'去报名 →')+'</a>'+
+        '</div></article>';
+    }).join('');
+  }
+  render('all');
+
+  // 走局域网服务时：数据一更新就自动刷新（用 file:// 打开时静默失败）
+  var cur = D.updatedAt;
+  setInterval(function(){
+    fetch('/api/version', { cache: 'no-store' }).then(function(r){ return r.json(); }).then(function(v){
+      if (v && v.updatedAt && v.updatedAt !== cur) location.reload();
+    }).catch(function(){});
+  }, 60000);
+})();
+</script>
+</body>
+</html>
